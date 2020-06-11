@@ -8,6 +8,7 @@ import re
 import stat
 import json
 import mimetypes
+from datetime import datetime
 import sys
 from pathlib2 import Path
 
@@ -18,6 +19,11 @@ key = ""
 ignored = ['.bzr', '$RECYCLE.BIN', '.DAV', '.DS_Store', '.git', '.hg', '.htaccess', '.htpasswd', '.Spotlight-V100', '.svn', '__MACOSX', 'ehthumbs.db', 'robots.txt', 'Thumbs.db', 'thumbs.tps']
 datatypes = {'audio': 'm4a,mp3,oga,ogg,webma,wav', 'archive': '7z,zip,rar,gz,tar', 'image': 'gif,ico,jpe,jpeg,jpg,png,svg,webp', 'pdf': 'pdf', 'quicktime': '3g2,3gp,3gp2,3gpp,mov,qt', 'source': 'atom,bat,bash,c,cmd,coffee,css,hml,js,json,java,less,markdown,md,php,pl,py,rb,rss,sass,scpt,swift,scss,sh,xml,yml,plist', 'text': 'txt', 'video': 'mp4,m4v,ogv,webm', 'website': 'htm,html,mhtm,mhtml,xhtm,xhtml'}
 icontypes = {'fa-music': 'm4a,mp3,oga,ogg,webma,wav', 'fa-archive': '7z,zip,rar,gz,tar', 'fa-picture-o': 'gif,ico,jpe,jpeg,jpg,png,svg,webp', 'fa-file-text': 'pdf', 'fa-film': '3g2,3gp,3gp2,3gpp,mov,qt', 'fa-code': 'atom,plist,bat,bash,c,cmd,coffee,css,hml,js,json,java,less,markdown,md,php,pl,py,rb,rss,sass,scpt,swift,scss,sh,xml,yml', 'fa-file-text-o': 'txt', 'fa-film': 'mp4,m4v,ogv,webm', 'fa-globe': 'htm,html,mhtm,mhtml,xhtm,xhtml'}
+
+def log(msg):
+	with open("/var/log/server.log","a+") as logfile:
+		logfile.write(str(datetime.now())+' '+msg+'\n')
+
 
 @app.template_filter('size_fmt')
 def size_fmt(size):
@@ -101,6 +107,7 @@ def get_range(request):
 
 class PathView(MethodView):
     def get(self, p=''):
+	log('get()')
         hide_dotfile = request.args.get('hide-dotfile', request.cookies.get('hide-dotfile', 'no'))
 
         path = os.path.join(root, p)
@@ -140,6 +147,7 @@ class PathView(MethodView):
         return res
     
     def put(self, p=''):
+	log('put()')
         if request.cookies.get('auth_cookie') == key:
             path = os.path.join(root, p)
             dir_path = os.path.dirname(path)
@@ -171,6 +179,7 @@ class PathView(MethodView):
         return res
 
     def post(self, p=''):
+	log('post()')
         if request.cookies.get('auth_cookie') == key:
             path = os.path.join(root, p)
             Path(path).mkdir(parents=True, exist_ok=True)
@@ -202,6 +211,7 @@ class PathView(MethodView):
         return res
     
     def delete(self, p=''):
+	log('delete()')
         if request.cookies.get('auth_cookie') == key:
             path = os.path.join(root, p)
             dir_path = os.path.dirname(path)
@@ -237,6 +247,7 @@ app.add_url_rule('/', view_func=path_view)
 app.add_url_rule('/<path:p>', view_func=path_view)
 
 if __name__ == '__main__':
+    log('main()')
     bind = os.getenv('FS_BIND', '0.0.0.0')
     port = os.getenv('FS_PORT', '8000')
     root = os.path.normpath(os.getenv('FS_PATH', '/tmp'))
